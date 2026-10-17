@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>合同会社設立・稼働準備 工程表 (汎用マスター版 v2.10)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body {
+    background-color: #f1f5f9;
+    color: #334155;
+    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+  }
+  .table-header { background-color: #334155; color: white; }
+  .phase-header { background-color: #e2e8f0; color: #1e293b; border-left: 6px solid #334155; }
+  .tag-self { background-color: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .tag-expert { background-color: #fef08a; color: #854d0e; border: 1px solid #fde047; }
+  .task-row { transition: all 0.2s ease; cursor: pointer; }
+  .task-row:hover { background-color: #f8fafc; }
+  .highlight-row { background-color: #fff1f2; border-color: #fecdd3; }
+  .is-checked { background-color: #f0fdf4 !important; }
+
+  /* 表示制御 */
+  #pc-table-wrapper { display: none; }
+  #mobile-card-wrapper { display: block; }
+  @media (min-width: 1024px) {
+    #pc-table-wrapper { display: block; }
+    #mobile-card-wrapper { display: none; }
+  }
+
+  summary::-webkit-details-marker { display: none; }
+  summary { list-style: none; cursor: pointer; transition: all 0.2s ease; }
+  summary:hover { background-color: #f8fafc; }
+
+  /* モーダル */
+  #modal-overlay {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0;
+    background-color: rgba(15, 23, 42, 0.8); backdrop-filter: blur(5px);
+    z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+  }
+  #modal-container {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -45%) scale(0.95);
+    width: 95%; max-width: 700px; max-height: 90vh;
+    background-color: #ffffff; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    z-index: 60; opacity: 0; pointer-events: none; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; flex-direction: column;
+  }
+  body.modal-active { overflow: hidden; }
+  body.modal-active #modal-overlay { opacity: 1; pointer-events: auto; }
+  body.modal-active #modal-container { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+  #modal-scroll-area { overflow-y: auto; flex-grow: 1; -webkit-overflow-scrolling: touch; padding: 1.5rem; }
+
+  @media print {
+    @page { margin: 5mm !important; size: A4 landscape !important; }
+    body { background-color: white !important; padding: 0 !important; margin: 0 !important; color: #1e293b !important; font-size: 8pt !important; }
+    .no-print { display: none !important; }
+    #pc-table-wrapper { display: block !important; }
+    #mobile-card-wrapper { display: none !important; }
+    .max-w-\[105rem\], .mx-auto, .p-2, .sm\:p-6, .md\:p-10, .overflow-hidden { 
+      max-width: 100% !important; width: 100% !important; margin: 0 !important; padding: 0 !important; border: none !important; box-shadow: none !important; overflow: visible !important;
+    }
+    h1 { font-size: 15pt !important; margin-top: 0 !important; border-bottom: 1.5px solid #334155 !important; display: inline-block !important; }
+    h2 { font-size: 9pt !important; margin-bottom: 8px !important; }
+    table { width: 100% !important; table-layout: fixed !important; border-collapse: collapse !important; min-width: auto !important; border: 1.2px solid #334155 !important; }
+    th { background-color: #334155 !important; color: white !important; -webkit-print-color-adjust: exact; padding: 4px 2px !important; border: 1px solid #334155 !important; text-align: left !important; }
+    td { padding: 4px 2px !important; border: 1px solid #cbd5e1 !important; word-break: break-word !important; vertical-align: middle !important; }
+    th:nth-child(4) { background-color: #334155 !important; color: white !important; }
+    td:nth-child(4) { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; }
+    th:nth-child(1), td:nth-child(1) { width: 3% !important; text-align: center !important; }
+    
+    td:nth-child(1)::before { content: "□"; font-size: 11pt; color: #94a3b8; font-family: "Segoe UI Symbol", "Apple Color Emoji", "Noto Color Emoji", sans-serif; }
+    tr.is-checked td:nth-child(1)::before { content: "☑"; color: #334155 !important; }
+    tr.is-checked td { background-color: #f0fdf4 !important; -webkit-print-color-adjust: exact; }
+
+    input[type="checkbox"] { display: none !important; }
+    th:nth-child(2), td:nth-child(2) { width: 20% !important; font-weight: bold !important; }
+    th:nth-child(3), td:nth-child(3) { display: none !important; } 
+    th:nth-child(4), td:nth-child(4) { width: 13% !important; }
+    th:nth-child(5), td:nth-child(5) { width: 9% !important; text-align: center !important; }
+    th:nth-child(6), td:nth-child(6) { width: 10% !important; font-weight: bold !important; } /* 実費列 */
+    th:nth-child(7), td:nth-child(7) { width: 15% !important; }
+    th:nth-child(8), td:nth-child(8) { width: 15% !important; }
+    th:nth-child(9), td:nth-child(9) { width: 15% !important; }
+    .phase-header { background-color: #f1f5f9 !important; -webkit-print-color-adjust: exact; border-left: 8px solid #334155 !important; border-bottom: 1.2px solid #334155 !important; font-weight: 800 !important; padding: 4px 6px !important; font-size: 9pt !important; }
+    .tag-self, .tag-expert { padding: 1px 3px !important; border-radius: 2px !important; font-size: 7pt !important; border: 0.5px solid #ccc !important; -webkit-print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body class="p-2 sm:p-6 md:p-10">
+
+<div class="max-w-[105rem] mx-auto bg-white rounded-xl shadow-lg border border-slate-200 relative mb-10 overflow-hidden">
+  
+  <div class="p-5 md:p-8 border-b border-slate-200 text-center relative">
+    <div class="absolute top-4 right-4 md:top-8 md:right-8 text-xs md:text-sm font-semibold bg-slate-100 text-slate-500 px-2 py-1 rounded-full no-print">v2.10 汎用版</div>
+    <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 mb-2 tracking-tight">合同会社設立・稼働準備 完全ロードマップ</h1>
+    <h2 class="text-lg md:text-xl font-bold text-slate-500 mb-4 md:mb-6">法人の迅速立ち上げ・コスト最適化工程表 <span class="bg-slate-800 text-white text-[10px] md:text-xs px-2 py-1 rounded ml-1 font-bold whitespace-nowrap uppercase tracking-widest">Standard Master</span></h2>
+    
+    <div class="mb-4 md:mb-6 flex flex-col items-center justify-center bg-slate-50/50 p-3 rounded-xl border border-slate-200 max-w-sm mx-auto shadow-sm no-print">
+      <label for="setup-date" class="text-sm font-extrabold text-slate-700 mb-1 tracking-wide">🗓️ 会社設立予定日の設定</label>
+      <input type="date" id="setup-date" class="bg-white border-2 border-slate-300 text-slate-800 font-bold rounded-lg px-4 py-2 cursor-pointer outline-none transition-colors hover:border-blue-400">
+    </div>
+
+    <details class="max-w-6xl mx-auto mb-4 no-print" open>
+      <summary class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-600 shadow-sm flex items-center justify-center hover:bg-slate-100/80 transition-colors">
+        📊 設立＆維持コストシミュレーション（標準モデルケース）を確認する (クリックで開閉)
+      </summary>
+      <div class="bg-gradient-to-r from-slate-50 to-blue-50 border-x border-b border-slate-200 rounded-b-xl p-4 md:p-6 shadow-sm">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left">
+          
+          <!-- 左側: 初期設立コスト -->
+          <div class="lg:col-span-5 border-b lg:border-b-0 lg:border-r border-slate-200 pb-6 lg:pb-0 lg:pr-6">
+            <h3 class="text-slate-700 font-extrabold text-sm mb-4 flex items-center gap-1.5 border-b border-slate-200 pb-2">
+              <span class="text-base">💰</span> 初期設立コスト（完全丸投げ vs クラウド自力活用）
+            </h3>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+              <div class="bg-white/60 p-2 rounded-lg border border-slate-100 text-center">
+                <p class="text-[10px] font-bold text-slate-500 mb-1">一般相場(フル代行)</p>
+                <p class="text-sm font-bold text-slate-400 line-through">約 429,000円</p>
+              </div>
+              <div class="bg-white/60 p-2 rounded-lg border border-slate-100 text-center">
+                <p class="text-[10px] font-bold text-slate-500 mb-1">効率化時の実費目安</p>
+                <p class="text-base font-bold text-slate-700">約 73,200円</p>
+              </div>
+              <div class="bg-white p-2.5 rounded-lg border-2 border-blue-200 shadow-sm text-center">
+                <p class="text-[10px] font-bold text-blue-600 mb-0.5">削減見込み額</p>
+                <p class="text-lg font-black text-blue-600">約 355,800円</p>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-500 leading-relaxed font-semibold">
+              ※電子定款の採用（印紙代4万円カット）および自力/クラウドツールの活用により、専門家代行報酬を大幅に抑制したシミュレーションです。
+            </p>
+          </div>
+
+          <!-- 右側: 毎月の維持コスト -->
+          <div class="lg:col-span-7">
+            <h3 class="text-slate-700 font-extrabold text-sm mb-4 flex items-center gap-1.5 border-b border-slate-200 pb-2">
+              <span class="text-base">📈</span> 毎月の維持コストシミュレーション例（役員報酬月額4.5万円設定時）
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-[11px] border border-slate-200 rounded-lg overflow-hidden bg-white">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-700 font-extrabold">
+                    <th class="p-2 border-b border-slate-200">項目</th>
+                    <th class="p-2 border-b border-slate-200 text-right">総額</th>
+                    <th class="p-2 border-b border-slate-200 text-right">会社負担(50%)</th>
+                    <th class="p-2 border-b border-slate-200 text-right">個人負担(50%)</th>
+                    <th class="p-2 border-b border-slate-200">お金の流れ・処理方法</th>
+                  </tr>
+                </thead>
+                <tbody class="text-slate-600 font-semibold">
+                  <tr class="border-b border-slate-100">
+                    <td class="p-2 font-bold text-slate-700">健康・介護保険料</td>
+                    <td class="p-2 text-right">6,800円</td>
+                    <td class="p-2 text-right">3,400円</td>
+                    <td class="p-2 text-right">3,400円</td>
+                    <td class="p-2 text-slate-500">役員報酬から個人分を天引き、会社分を上乗せして納付</td>
+                  </tr>
+                  <tr class="border-b border-slate-100">
+                    <td class="p-2 font-bold text-slate-700">厚生年金保険料</td>
+                    <td class="p-2 text-right">16,104円</td>
+                    <td class="p-2 text-right">8,052円</td>
+                    <td class="p-2 text-right">8,052円</td>
+                    <td class="p-2 text-slate-500">役員報酬から個人分を天引き、会社分を上乗せして納付</td>
+                  </tr>
+                  <tr class="border-b-2 border-slate-200 bg-slate-50 font-extrabold text-slate-800">
+                    <td class="p-2">社会保険料 合計</td>
+                    <td class="p-2 text-right">22,904円</td>
+                    <td class="p-2 text-right">11,452円</td>
+                    <td class="p-2 text-right">11,452円</td>
+                    <td class="p-2 text-slate-600">毎月末に法人の銀行口座から総額が自動引き落とし</td>
+                  </tr>
+                  <tr class="border-b border-slate-100">
+                    <td class="p-2 font-bold text-slate-700">役員報酬 (額面)</td>
+                    <td class="p-2 text-right">45,000円</td>
+                    <td class="p-2 text-right">0円</td>
+                    <td class="p-2 text-right">45,000円</td>
+                    <td class="p-2 text-slate-500">個人口座へは社保天引き後の【33,548円】を振り込みます</td>
+                  </tr>
+                  <tr class="bg-blue-50/70 font-black text-blue-900">
+                    <td class="p-2 flex items-center gap-1">毎月の総支出 <span class="bg-blue-200/80 text-blue-800 text-[8px] px-1 py-0.5 rounded font-black tracking-wider uppercase">Cashout</span></td>
+                    <td class="p-2 text-right text-xs">56,452円</td>
+                    <td class="p-2 text-right text-xs">11,452円</td>
+                    <td class="p-2 text-right text-xs">45,000円</td>
+                    <td class="p-2 text-blue-950 font-bold">法人口座から毎月アウトされる実質総費用です</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="text-[10px] text-slate-400 font-bold text-center mt-2">
+              ※設定する役員報酬額や加入条件により具体的な金額は変動します。
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </details>
+    
+    <div class="flex flex-wrap justify-center gap-3 md:gap-6 text-xs md:text-sm mt-2">
+      <div class="flex items-center"><span class="px-2 py-0.5 rounded tag-self font-bold shadow-sm mr-2 whitespace-nowrap">【自身】👤</span> 自身で行うタスク</div>
+      <div class="flex items-center"><span class="px-2 py-0.5 rounded tag-expert font-bold shadow-sm mr-2 whitespace-nowrap">【依頼】🧑‍💼</span> 専門家へ依頼するタスク</div>
+    </div>
+  </div>
+
+  <div id="pc-table-wrapper" class="overflow-x-auto p-0">
+    <table class="w-full text-left border-collapse min-w-[1300px]">
+      <thead>
+        <tr class="table-header text-sm">
+          <th class="p-3 w-12 text-center border-b border-slate-300">完</th>
+          <th class="p-3 w-44 border-b border-slate-300">タスク内容</th>
+          <th class="p-3 w-28 border-b border-slate-300">時期</th>
+          <th class="p-3 w-32 border-b border-slate-300 bg-slate-700">実行期間</th>
+          <th class="p-3 w-24 text-center border-b border-slate-300">担当</th>
+          <th class="p-3 w-28 border-b border-slate-300 bg-slate-700">実費</th> <!-- ★実費列を追加 -->
+          <th class="p-3 w-40 border-b border-slate-300">必要なもの</th>
+          <th class="p-3 w-48 border-b border-slate-300 bg-slate-700">提出物</th>
+          <th class="p-3 w-40 border-b border-slate-300 bg-slate-700">提出先</th>
+        </tr>
+      </thead>
+      <tbody id="pc-table-body"></tbody>
+    </table>
+  </div>
+
+  <div id="mobile-card-wrapper" class="bg-slate-50 p-3 sm:p-5">
+    <div id="mobile-card-list" class="space-y-4"></div>
+  </div>
+
+  <div class="bg-slate-100 p-4 md:p-5 text-center text-sm text-slate-500 border-t border-slate-200 no-print">
+    <p class="mb-3 text-[11px] font-bold text-slate-400 uppercase tracking-widest">※ 印刷時、送信先を「PDFとして保存」に設定することでPDF保存できます</p>
+    <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-8 rounded-xl transition shadow-md flex flex-col items-center justify-center mx-auto w-full md:w-auto">
+      <span class="text-base">PDFとして保存・印刷する</span>
+      <span class="text-[10px] opacity-70 mt-0.5">Checked state will be reflected in PDF</span>
+    </button>
+  </div>
+</div>
+
+<div id="modal-overlay"></div>
+<div id="modal-container">
+  <div class="border-b border-slate-200 px-4 py-4 md:px-7 md:py-5 flex justify-between items-center bg-slate-50 shrink-0">
+    <div><span class="text-[10px] font-black text-slate-500 tracking-widest uppercase mb-1 block">Task Detail</span><h3 id="modal-title" class="text-xl md:text-2xl font-black text-slate-800 tracking-tight">タイトル</h3></div>
+    <button id="modal-close-btn-top" class="text-slate-400 hover:text-slate-800 transition p-2 rounded-full"><svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+  </div>
+  <div id="modal-scroll-area">
+    <div id="modal-badges" class="mb-4 flex flex-col gap-2"></div>
+    <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 md:p-4 mb-5 shadow-inner">
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+        <div class="text-center w-full sm:w-[30%] bg-white p-2 rounded border border-slate-100"><p class="text-[10px] font-bold text-gray-500">一般相場</p><p id="modal-cost-original" class="text-sm md:text-lg font-bold text-gray-400 line-through">0円</p></div>
+        <div class="text-center w-full sm:w-[30%] bg-white p-2 rounded border border-slate-200"><p class="text-[10px] font-bold text-slate-600">実費目安</p><p id="modal-cost-actual" class="text-base md:text-xl font-bold text-slate-800">0円</p></div>
+        <div class="text-center w-full sm:w-[30%] bg-blue-50 p-2 rounded border border-blue-100"><p class="text-[10px] font-black text-blue-600">削減見込み額</p><p id="modal-cost-saved" class="text-lg md:text-xl font-black text-blue-600">0円</p></div>
+      </div>
+      <div id="modal-reduction-basis" class="mt-3 p-2 bg-blue-100/50 rounded-lg border border-blue-200 text-[11px] text-blue-800 font-bold"></div>
+    </div>
+    <div id="modal-saving" class="hidden mb-5"></div>
+    <div class="mt-2">
+      <h4 class="text-[14px] font-extrabold text-slate-800 mb-2">手順と実務上の留意事項</h4>
+      <div id="modal-content" class="bg-slate-50/50 border border-slate-200 rounded-xl p-4 text-slate-700 text-[14px]"></div>
+    </div>
+  </div>
+  <div class="bg-white border-t border-slate-100 p-4 shrink-0 flex justify-center">
+    <button id="modal-close-btn-bottom" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-8 rounded-full shadow-md w-full max-w-sm">閉じる</button>
+  </div>
+</div>
+
+<script>
+  function formatDate(d, includeYear) {
+    if(isNaN(d.getTime())) return "";
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return includeYear ? `${d.getFullYear()}/${mm}/${dd}` : `${mm}/${dd}`;
+  }
+  function addDays(d, days) { const r = new Date(d); r.setDate(r.getDate() + days); return r; }
+  function addMonths(d, m) { const r = new Date(d); r.setMonth(r.getMonth() + m); return r; }
+
+  // コスト表示の整形（「無料」を「0円」へ標準化）
+  function formatCost(costStr) {
+    if (!costStr || costStr === "無料" || costStr === "無料（振込手数料除く）" || costStr === "無料（印鑑証明書代・郵送切手代除く）" || costStr === "無料（登録免許税除く）") {
+      return "0円";
+    }
+    return costStr;
+  }
+
+  function getTaskData(baseDateStr) {
+    const d = new Date(baseDateStr);
+    if (isNaN(d.getTime())) return [];
+    
+    const d_m1m = addMonths(d, -1);
+    const d_m3w = addDays(d, -21);
+    const d_m2w = addDays(d, -14);
+    const d_m13d = addDays(d, -13);
+    const d_p2d = addDays(d, 2);
+    const d_p10d = addDays(d, 10);
+    const d_p11d = addDays(d, 11);
+    const d_p3m = addMonths(d, 3);
+    
+    const d_p1m25d = new Date(d.getFullYear(), d.getMonth() + 1, 25);
+    const d_p1m_last = new Date(d.getFullYear(), d.getMonth() + 2, 0);
+
+    return [
+      { type: 'header', text: 'A. 会社設立前の準備フェーズ', subtext: `※ 設立目標日：${formatDate(d, false)}` },
+      { id: "1-1", title: "会社基本情報の決定", deadline: "1ヶ月前", period: `〜 ${formatDate(d_m1m, false)}`, person: "【自身】👤", items: "-", submit: "-", dest: "-", costOrig: "10,000円", costAct: "0円", costSaved: "10,000円", 
+        reductionBasis: "💡 削減の根拠：代行業者へのコンサルティング料・事前相談手数料の削減。", 
+        saving: "商号、本店所在地、資本金額、事業目的、決算期、役員構成等の基本事項を決定します。", content: "自身で決定・判断することで、外部への初期コンサルティング費用を抑えます。" },
+      
+      { id: "1-2", title: "個人の印鑑証明書の取得", deadline: "3週間前", period: `〜 ${formatDate(d_m3w, false)}`, person: "【自身】👤", items: "マイナンバー等", submit: "-", dest: "役所・コンビニ", costOrig: "1,000円", costAct: "200円", costSaved: "800円", 
+        reductionBasis: "💡 削減の根拠：窓口発行に対し、コンビニ交付の活用による手数料抑制。", 
+        saving: "マイナンバーカードを利用したコンビニ交付が迅速かつ安価です。", content: "役所窓口に行く手間と交通費、窓口手数料を最小限に抑えます。" },
+      
+      { id: "1-3", title: "会社の実印作成（3点セット）", deadline: "3週間前", period: `${formatDate(d_m1m, false)} 〜 ${formatDate(d_m3w, false)}`, person: "【自身】👤", items: "ネット注文等", submit: "-", dest: "-", costOrig: "20,000円", costAct: "5,000円", costSaved: "15,000円", 
+        reductionBasis: "💡 削減の根拠：店舗型実印店に対し、オンライン特化店での直接購入による中間マージン排除。", 
+        saving: "「実印・銀行印・角印」の3点セットを準備します。オンライン注文が効率的です。", content: "品質を維持しつつ、オンライン発注により店舗運営コスト分を削減します。" },
+
+      { id: "1-4", title: "法人用電話番号の確保", deadline: "3週間前", period: `${formatDate(d_m1m, false)} 〜 ${formatDate(d_m3w, false)}`, person: "【自身】👤", items: "身分証明書、クレカ等", submit: "IP電話等の契約", dest: "通信事業者", costOrig: "10,000円", costAct: "500円", costSaved: "9,500円", 
+        reductionBasis: "💡 削減の根拠：固定電話工事費等に対し、クラウドIP電話サービスの活用によるコスト抑制。", 
+        saving: "登記申請自体は個人の携帯番号でも可能ですが、設立後の「法人口座開設」や「銀行融資」において、代表個人の携帯番号のみだと固定連絡先がないとみなされ信用面で不利になるケースがあります。「050」等のIP電話サービスを準備しておくことが推奨されます。", 
+        content: "代表個人の携帯番号とは別に、法人専用の電話番号（050IP電話やクラウドPBX等）を確保します。月額数百円のクラウドサービスを活用することでコストを最小化しつつ信用力を担保します。" },
+      
+      { id: "1-5", title: "設立支援ツールへの情報入力", deadline: "2週間前", period: `${formatDate(d_m3w, false)} 〜 ${formatDate(d_m2w, false)}`, person: "【自身】👤", items: "クラウドツール", submit: "-", dest: "Webサービス", costOrig: "30,000円", costAct: "0円", costSaved: "30,000円", 
+        reductionBasis: "💡 削減の根拠：書類作成代行業者（司法書士・行政書士等）への依頼費用をクラウドツール自力活用により代替。", 
+        saving: "マネーフォワード会社設立やfreee会社設立などのクラウドサービスを活用します。", content: "クラウド設立支援ツールを活用して定型書類を生成し、代行手数料を浮かせます。" },
+      
+      { id: "1-6", isHighlight: true, title: "定款の作成・電子署名", deadline: "2週間前", period: `${formatDate(d_m3w, false)} 〜 ${formatDate(d_m2w, false)}`, person: "【自身・依頼】🧑‍💼", items: "電子署名費用", submit: "定款ドラフト", dest: "行政書士等", costOrig: "50,000円", costAct: "5,000円", costSaved: "45,000円", 
+        reductionBasis: "💡 削減の根拠：紙定款（印紙代4万円）を電子定款化することで印紙代を全額カット。かつフル代行ではなく電子署名のみ依頼。", 
+        saving: "電子署名により印紙代4万円が不要。提携行政書士等によるチェックを活用します。", content: "4万円の収入印紙代をゼロにするほか、手続きの一部（電子署名付与）のみを専門家に依頼することで費用を最小化します。" },
+      
+      { id: "1-7", title: "定款保存用CD-Rの作成", deadline: "申請前", period: `申請直前`, person: "【自身】👤", items: "CD-R", submit: "定款PDF", dest: "法務局提出用", costOrig: "-", costAct: "300円", costSaved: "0円", 
+        reductionBasis: "-", 
+        saving: "電子定款データを記録したメディアを法務局へ提出するために準備します。", content: "自身でデータの読み込み作業を行うことで、提出用メディアの作成料を実費のみに留めます。" },
+      
+      { id: "1-8", title: "資本金の払い込み・通帳コピー", deadline: "定款完成後", period: `${formatDate(d_m13d, false)} 〜`, person: "【自身】👤", items: "通帳、出資金", submit: "払込証明書", dest: "法務局", costOrig: "0円", costAct: "0円", costSaved: "0円", 
+        reductionBasis: "💡 資本金設計：事業規模や税制メリットに応じた戦略的出資金の払い込み。", 
+        saving: "払込証明書作成のため、通帳の表紙・裏表紙・入金箇所のコピー（またはネットバンキングの画面印刷）が必要です。", content: "決定した資本金額を発起人（設立者）の個人口座に振り込み、払込証明書を作成します。" },
+
+      { id: "1-9", title: "本店所在地の使用権限整理（賃貸借・使用貸借）", deadline: "設立日直前", period: `定款完成 〜 設立日まで`, person: "【自身】👤", items: "契約書雛形", submit: "賃貸借 / 使用貸借契約書", dest: "社内備付", costOrig: "15,000円", costAct: "0円", costSaved: "15,000円", 
+        reductionBasis: "💡 削減の根拠：社内契約書類作成依頼料の削減。", 
+        saving: "本店所在地の登記自体には法務局への賃貸借契約書の提出は不要ですが、設立直後の「法人口座開設」や「税務署届出」で実体確認のために提出を求められるケースが非常に多く発生します。社内用の使用貸借・賃貸借契約を用意しておきます。", 
+        content: "個人所有物件や自宅等を本店とする場合、法人設立後に個人と法人で「賃貸借契約」または「使用貸借契約（無償）」を速やかに締結できるよう契約書を準備します。" },
+      
+      { id: "1-10", title: "登記書類の印刷・印紙購入", deadline: "申請当日", period: `${formatDate(d, false)}`, person: "【自身】👤", items: "印紙6万円分", submit: "-", dest: "法務局・郵便局", costOrig: "-", costAct: "60,000円", costSaved: "0円", 
+        reductionBasis: "-", 
+        saving: "ツールから出力した書類を印刷し、合同会社の登録免許税（6万円）の収入印紙を準備します。", content: "登録免許税は法定費用ですが、印刷・製本を自身で行うことで雑費を抑えます。" },
+      
+      { id: "1-11", isHighlight: true, title: "法務局への登記申請", deadline: "設立日", period: `${formatDate(d, false)} 必着`, person: "【自身】👤", items: "書類一式、印鑑", submit: "登記申請書等", dest: "管轄法務局", costOrig: "110,000円", costAct: "60,000円", costSaved: "50,000円", 
+        reductionBasis: "💡 削減の根拠：司法書士への登記申請代行料（相場5万円〜10万円）の削減。", 
+        saving: "申請書類を法務局へ提出した日が会社の「法的設立日」となります。", content: "法務局窓口への提出または郵送申請により、司法書士代行手数料を抑えます。" },
+      
+      { type: 'header', text: 'B. 会社設立直後フェーズ', subtext: '' },
+      { id: "2-1", isHighlight: true, title: "役員報酬決定の社内決議・書類作成", deadline: "設立日当日", period: `${formatDate(d, false)}`, person: "【自身】👤", items: "代表印、決定書雛形", submit: "総社員の同意書 / 決定書", dest: "社内備付", costOrig: "20,000円", costAct: "0円", costSaved: "20,000円", 
+        reductionBasis: "💡 削減の根拠：専門家への社内書類作成依頼料の削減。", 
+        saving: "役員報酬は最高意思決定機関（総社員等）で正式決定する必要があります。税務上の「定期同額給与」の要件を満たすため、設立後速やかに作成・調印します。", 
+        content: "合同会社における役員報酬額および支給ルールを決定する手続きです。「総社員の同意書」または「業務執行社員決定書」を作成し、代表者印を押印の上、社内に備え付けます。" },
+
+      { id: "2-2", title: "法人番号の早期確認", deadline: "申請2-3日後", period: `${formatDate(d_p2d, false)} 頃`, person: "【自身】👤", items: "ネット環境", submit: "商号検索", dest: "国税庁法人番号サイト", costOrig: "-", costAct: "0円", costSaved: "-", 
+        reductionBasis: "※ 郵送の通知書を待たず早期確認することで、全手続きを迅速化。", 
+        saving: "郵送の通知書到着を待たずに「国税庁法人番号公表サイト」で13桁の法人番号を特定することで、口座開設や税務届出を前倒しで進められます。", 
+        content: "法務局への申請後数日で国税庁ウェブサイトに掲載されます。法人番号を早期特定し、各種手続きをスピーディーに開始します。" },
+
+      { id: "2-3", title: "印鑑カード発行・謄本等の取得", deadline: "完了直後", period: `${formatDate(d_p10d, false)} 頃`, person: "【自身】👤", items: "印鑑カード申請書等", submit: "交付請求書", dest: "管轄法務局", costOrig: "4,000円", costAct: "3,000円", costSaved: "1,000円", 
+        reductionBasis: "💡 削減の根拠：代理取得費用に対し、自身での窓口請求によるコスト抑制。", 
+        saving: "登記完了後、法務局窓口にて印鑑カードを発行し、履歴事項全部証明書（登記簿謄本）および印鑑証明書を取得します。", content: "窓口またはオンライン請求を活用し、取得代行費用をカットします。" },
+
+      { id: "2-4", title: "GビズIDプライムアカウントの作成", deadline: "謄本取得後すぐ", period: `${formatDate(d_p11d, false)} 頃`, person: "【自身】👤", items: "法人の印鑑証明書、実印", submit: "登録申請書、証明書原本", dest: "デジタル庁（郵送）", costOrig: "15,000円", costAct: "0円", costSaved: "15,000円", 
+        reductionBasis: "💡 削減の根拠：行政アカウントセットアップ代行手数料の削減。", 
+        saving: "社会保険電子申請（e-Gov）や補助金申請に必要な「GビズIDプライム」を申請します。法人印鑑証明書の添付と実印押印が必要です（発行まで約1〜2週間）。", 
+        content: "オンラインで申請書を作成・印刷し、代表印を押印して印鑑証明書（原本）とともに郵送提出します。" },
+      
+      { id: "2-5", title: "設立届・青色申告等の提出", deadline: "2ヶ月以内", period: `${formatDate(d_p10d, false)} 〜`, person: "【自身・依頼】🧑‍💼", items: "届出書類一式", submit: "設立届、青色申告申請書", dest: "管轄税務署・都道府県・市区町村", costOrig: "30,000円", costAct: "0円", costSaved: "30,000円", 
+        reductionBasis: "💡 削減の根拠：税理士による初期届出作成代行費用の削減。", 
+        saving: "税務署および地方自治体への設立届。節税に不可欠な「青色申告承認申請書」は必ず期限内に提出します。", content: "設立支援ツールで出力した書類を自身で提出またはe-Tax等で送信し、初期セットアップ費用を抑えます。" },
+      
+      { id: "2-6", title: "給与・源泉税関係の届出", deadline: "1ヶ月以内", period: `${formatDate(d_p10d, false)} 〜`, person: "【自身・依頼】🧑‍💼", items: "社内決議書類", submit: "給与支払事務所開設届・納期特例申請", dest: "管轄税務署", costOrig: "20,000円", costAct: "0円", costSaved: "20,000円", 
+        reductionBasis: "💡 削減の根拠：各種税務届出代行料のカット。", 
+        saving: "役員報酬支給に伴う「給与支払事務所等の開設届出書」を提出します。「源泉所得税の納期の特例の承認に関する申請書」を出すことで納付を年2回に集約できます。", content: "実務上必要な届出を自力で提出し、管理コストを削減します。" },
+      
+      { id: "2-7", title: "社会保険への加入手続き", deadline: "設立後すぐ", period: `謄本取得後すぐ`, person: "【自身】👤", items: "新規適用届、資格取得届、謄本原本", submit: "社会保険届出一式", dest: "管轄年金事務所", costOrig: "30,000円", costAct: "0円", costSaved: "30,000円", 
+        reductionBasis: "💡 削減の根拠：社労士への新規適用届代行費用の削減。", 
+        saving: "社長1人の法人であっても社会保険（健康保険・厚生年金）への加入は義務となります。役員報酬決定書類を基に手続きを行います。", content: "窓口対応または郵送・電子申請を自身で行うことで代行費用をカットします。" },
+      
+      { id: "2-8", title: "法人口座・クレジットカードの申し込み", deadline: "謄本取得後", period: `${formatDate(d_p10d, false)} 〜`, person: "【自身】👤", items: "謄本、HP、固定電話等", submit: "口座・カード開設申込", dest: "各金融機関・カード会社", costOrig: "34,000円", costAct: "0円", costSaved: "34,000円", 
+        reductionBasis: "💡 削減の根拠：開設サポート手数料の削減。", 
+        saving: "固定電話番号やホームページ・業務契約書等の事業実体資料を揃えて申し込むことで、銀行審査の通過率が大幅に向上します。", content: "ネット銀行（住信SBI、GMOあおぞら等）を中心に金融機関へ自力で申し込みを行います。" },
+
+      { id: "2-9", title: "社会保険証の到着", deadline: "約1〜2週間後", period: `${formatDate(addDays(d, 20), false)} 〜 ${formatDate(addDays(d, 35), false)} 頃`, person: "【自身】👤", items: "-", submit: "-", dest: "事務所・自宅", costOrig: "-", costAct: "0円", costSaved: "-", 
+        reductionBasis: "※ 行政発行手続きに伴う受領のみです。", 
+        saving: "年金事務所での新規適用処理完了後、健康保険被保険者証が届きます。個人の国民健康保険脱退時に必要となります。", content: "社会保険証を受領し、内容を確認します。" },
+
+      { id: "2-10", title: "国民健康保険の脱退手続き", deadline: "到着後すぐ", period: `到着後14日以内`, person: "【自身】👤", items: "新社会保険証、旧国保険証", submit: "資格喪失届", dest: "管轄市区町村役場", costOrig: "-", costAct: "0円", costSaved: "-", 
+        reductionBasis: "※ 二重支払いを防ぐための自己手続き。", 
+        saving: "社会保険加入に伴い、個人の国民健康保険脱退手続きを自治体窓口で行います。これにより国保料の二重支払いを防ぎます。", content: "新しく届いた法人の社会保険証とこれまでの国民健康保険証を持参し、役所窓口で脱退処理を行います。" },
+
+      { type: 'header', text: 'C. 稼働・運用フェーズ', subtext: '' },
+      { id: "3-1", title: "社内規定（旅費規程・社宅規程等）の整備", deadline: "3ヶ月以内", period: `〜 ${formatDate(d_p3m, false)}`, person: "【自身】👤", items: "規定ドラフト", submit: "-", dest: "社内備付", costOrig: "200,000円", costAct: "0円", costSaved: "200,000円", 
+        reductionBasis: "💡 削減の根拠：コンサルタントによる規定作成外注費用の削減。", 
+        saving: "出張旅費規程や社宅規程等を整備することで、非課税での日当支給や社宅経費化など、適正な節税・経費処理の基盤を構築できます。", content: "各種規程のテンプレートを活用し、自社の運用に合わせた規定を作成・保管します。" },
+      
+      { id: "3-2", title: "クラウド会計ソフトの導入・連携設定", deadline: "取引開始前", period: "直ちに", person: "【自身】👤", items: "会計ソフト契約", submit: "API口座連携", dest: "クラウド会計", costOrig: "60,000円", costAct: "実費", costSaved: "60,000円", 
+        reductionBasis: "💡 削減の根拠：会計初期セットアップ代行料の削減。", 
+        saving: "法人口座やクレジットカードをクラウド会計（マネーフォワード、freee等）と連携し、仕訳業務を自動化します。", content: "会計ソフトの初期設定と銀行・クレジットカードの同期を自身で行います。" },
+      
+      { id: "3-3", title: "顧問税理士の検討・選定", deadline: "適宜", period: "必要時", person: "【自身・依頼】🧑‍💼", items: "決算・試算表", submit: "-", dest: "-", costOrig: "顧問料", costAct: "-", costSaved: "-", 
+        reductionBasis: "💡 最適化：事業フェーズに応じた専門家活用の最適化。", 
+        saving: "事業規模や取引量に応じて専門家を活用します。初期フェーズでの過度な固定費化を避ける設計が重要です。", content: "自社の事業規模や決算ニーズに合わせて税理士の関与度（スポット決算〜月額顧問）を最適選択します。" },
+
+      { id: "3-4", title: "第1回 役員報酬の支給", deadline: "毎月指定日", period: `${formatDate(d_p1m25d, false)}`, person: "【自身】👤", items: "給与明細", submit: "振込処理", dest: "法人口座 ➡ 個人口座", costOrig: "-", costAct: "0円", costSaved: "-", 
+        reductionBasis: "※ 実務運用タスクです。", 
+        saving: "決議した役員報酬額面から社会保険料（個人負担分）および源泉所得税を控除した差引支給額を個人の口座へ振り込みます。", content: "法人口座から役員個人の口座へ天引き後の金額を振込支給し、給与明細を発行・保存します。" },
+
+      { id: "3-5", title: "第1回 社会保険料の口座引き落とし", deadline: "翌月末日", period: `${formatDate(d_p1m_last, false)}`, person: "【自身】👤", items: "残高確認", submit: "自動振替", dest: "法人口座", costOrig: "-", costAct: "22,904円", costSaved: "-", 
+        reductionBasis: "※ 法定費用（社会保険料総額）です。", 
+        saving: "会社負担分と個人天引き分の合計額が法人口座から自動引き落としされます。事前に残高を確認しておきます。", content: "年金事務所に登録した法人口座からの自動引き落としを確認します。" },
+
+      { id: "3-6", title: "定常運用（給与・社会保険・会計）", deadline: "毎月定常", period: `毎月`, person: "【自身】👤", items: "-", submit: "-", dest: "各機関", costOrig: "-", costAct: "56,452円", costSaved: "-", 
+        reductionBasis: "※ 運用の定常化・透明化。", 
+        saving: "毎月のルーティンとして「役員報酬の支給」「社会保険料の振替」「会計データの同期・確認」を定常運用します。", content: "毎月の給与振込・社保引き落とし・経費精算をルール化し、円滑な法人運用を維持します。" },
+
+      { type: 'header', text: 'D. 資金調達・事業拡大フェーズ（必要に応じて実行）', subtext: '' },
+      { id: "4-1", isHighlight: true, title: "日本政策金融公庫：「創業融資」の検討・獲得", deadline: "創業2年以内", period: "設立完了後随時", person: "【自身】👤", items: "自己資金証明、創業計画書", submit: "融資申込書一式", dest: "日本政策金融公庫", costOrig: "-", costAct: "0円", costSaved: "-", 
+        reductionBasis: "※ 無担保・無保証でレバレッジを確保できる代表的な調達ルート（金利等除く）。", 
+        saving: "創業初期（2年以内）は最も実績要件が緩和される時期です。自己資金に融資を組み合わせることで手元キャッシュを厚くできます。", 
+        content: "創業計画書を作成し、公庫の窓口に申し込みます。無担保・無保証人での借り入れが可能なため、創業期の資金繰り安定化に有用です。" },
+
+      { id: "4-2", title: "信用金庫等：「小口零細企業保証制度」融資の獲得", deadline: "公庫融資後等", period: "適宜", person: "【自身】👤", items: "法人口座、申込書", submit: "保証・融資申込一式", dest: "信用金庫・地方銀行", costOrig: "-", costAct: "0円", costSaved: "-", 
+        reductionBasis: "※ 信用保証協会100%保証により実績の浅い法人でも取り組みやすい制度（保証料・金利除く）。", 
+        saving: "信用保証協会が100%保証する制度を活用し、地元の信用金庫や地方銀行との最初の取引実績（パイプ）を構築します。", 
+        content: "地域の信用金庫等に相談し、制度融資を申し込みます。民間金融機関との信頼関係構築の第一歩となります。" },
+
+      { id: "4-3", title: "日本政策金融公庫：「マル経融資」の活用", deadline: "設立6ヶ月以降", period: "指導受任後", person: "【自身】👤", items: "商工会議所等への加入", submit: "推薦依頼書、決算書", dest: "商工会議所・公庫", costOrig: "-", costAct: "0円", costSaved: "-", 
+        reductionBasis: "※ 商工会議所等の経営指導を経ることで無担保・無保証・低金利調達。", 
+        saving: "地域の商工会議所や商工会に加入し、一定期間（原則6ヶ月以上）の経営指導を受けることで推薦を得られる低利融資制度です。", 
+        content: "商工会議所等の支援を受けながら経営体制を整え、推薦を得て追加の公庫融資を引き出します。" },
+
+      { id: "4-4", title: "保証協会付き融資から「プロパー融資」へのステップアップ", deadline: "返済実績構築後", period: "決算2〜3期以降", person: "【自身】👤", items: "決算書、事業計画書", submit: "融資申請書", dest: "民間金融機関", costOrig: "-", costAct: "0円", costSaved: "-", 
+        reductionBasis: "※ 信用保証協会に頼らない銀行直接リスク（プロパー）への移行。", 
+        saving: "期を重ねて黒字実績と期日通りの返済実績を作ることで、保証協会なしのプロパー融資の打診が可能になります。", 
+        content: "複数期の決算書を基に金融機関と交渉し、プロパー融資の取引実績を作ることで企業信用力を高めます。" },
+
+      { id: "4-5", title: "「短期継続融資（短結）」の交渉・導入", deadline: "定常稼働・実績後", period: "中長期", person: "【自身】👤", items: "正常運転資金の証明", submit: "融資実行申請", dest: "取引金融機関", costOrig: "-", costAct: "0円", costSaved: "-", 
+        reductionBasis: "※ 正常運転資金に対する効率的な資金運用形態。", 
+        saving: "売掛金や在庫等の正常運転資金に対して元金返済を据え置き利息のみを支払う手形貸付形式の融資です。十分な取引実績と財務信頼性が前提となります。", 
+        content: "事業の商流と資金繰りの安定化が実証された段階で金融機関と交渉し、理想的な運転資金調達構造を構築します。" }
+    ];
+  }
+
+  const tableBody = document.getElementById('pc-table-body');
+  const cardList = document.getElementById('mobile-card-list');
+
+  function handleCheckboxChange(e) {
+    const taskId = e.target.getAttribute('data-task-id');
+    const checked = e.target.checked;
+    
+    document.querySelectorAll(`input[data-task-id="${taskId}"]`).forEach(cb => {
+      cb.checked = checked;
+      const row = cb.closest('.task-row');
+      if (row) {
+        if (checked) {
+          row.classList.add('is-checked');
+        } else {
+          row.classList.remove('is-checked');
+        }
+      }
+    });
+  }
+
+  function renderTasks(baseDateStr) {
+    const taskData = getTaskData(baseDateStr);
+    tableBody.innerHTML = ''; cardList.innerHTML = '';
+    taskData.forEach((row) => {
+      if (row.type === 'header') {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="9" class="p-3 phase-header font-bold text-lg">${row.text} <span class="text-sm font-normal text-slate-500 ml-4">${row.subtext}</span></td>`;
+        tableBody.appendChild(tr);
+        const h = document.createElement('div');
+        h.className = "phase-header rounded-md p-3 font-bold text-[15px] mt-4";
+        h.innerHTML = `${row.text} <span class="text-[11px] font-normal text-slate-500 ml-1 block mt-1">${row.subtext}</span>`;
+        cardList.appendChild(h);
+        return;
+      }
+      const isExpert = row.person.includes('依頼');
+      const tagClass = isExpert ? 'tag-expert' : 'tag-self';
+      const actualCostText = formatCost(row.costAct);
+      
+      const tr = document.createElement('tr');
+      tr.className = `border-b ${row.isHighlight ? 'highlight-row' : 'border-slate-200'} text-[14px] task-row`;
+      tr.addEventListener('click', () => openModalObj(row));
+      tr.innerHTML = `
+        <td class="p-3 text-center" onclick="event.stopPropagation()">
+          <input type="checkbox" class="w-5 h-5 text-blue-600 rounded cursor-pointer" data-task-id="${row.id}">
+        </td>
+        <td class="p-3 font-bold text-blue-700 underline">${row.title}</td>
+        <td class="p-3 text-slate-600">${row.deadline}</td>
+        <td class="p-3 font-bold text-slate-700 bg-blue-50/50">${row.period}</td>
+        <td class="p-3 text-center"><span class="px-2 py-1 rounded ${tagClass} text-xs font-bold">${row.person}</span></td>
+        <td class="p-3 font-bold text-slate-800 bg-slate-50">${actualCostText}</td> <!-- ★実費列 -->
+        <td class="p-3 text-slate-600 text-sm">${row.items}</td>
+        <td class="p-3 text-slate-800 font-semibold text-sm">${row.submit}</td>
+        <td class="p-3 font-semibold text-slate-800 text-sm">${row.dest}</td>
+      `;
+      tableBody.appendChild(tr);
+
+      const card = document.createElement('div');
+      card.className = `bg-white rounded-xl p-4 shadow-sm border ${row.isHighlight ? 'border-rose-300 highlight-row' : 'border-slate-200'} task-row relative pl-12`;
+      card.addEventListener('click', () => openModalObj(row));
+      card.innerHTML = `
+        <div class="absolute left-4 top-4" onclick="event.stopPropagation()">
+          <input type="checkbox" class="w-5 h-5 text-blue-600 rounded cursor-pointer" data-task-id="${row.id}">
+        </div>
+        <div class="flex justify-between items-start mb-2"><span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">${row.deadline}</span><span class="${tagClass} text-[10px] px-2 py-0.5 rounded font-bold">${row.person}</span></div>
+        <h3 class="font-extrabold text-[15px] text-blue-700 mb-1">${row.title}</h3>
+        <div class="text-[12px] font-bold text-slate-700 mb-2">実費目安: <span class="text-blue-900 font-extrabold">${actualCostText}</span></div>
+        <div class="flex justify-between items-end"><div class="text-[11px] font-bold text-slate-700 bg-blue-50 px-2 py-1 rounded">目安時期: ${row.period}</div></div>
+      `;
+      cardList.appendChild(card);
+    });
+
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', handleCheckboxChange);
+    });
+  }
+
+  const dateInput = document.getElementById('setup-date');
+  const today = new Date();
+  const defaultTarget = addMonths(today, 1);
+  dateInput.value = defaultTarget.toISOString().split('T')[0];
+
+  dateInput.addEventListener('change', (e) => { if (e.target.value) renderTasks(e.target.value); });
+  renderTasks(dateInput.value);
+
+  function openModalObj(row) {
+    const actualCostText = formatCost(row.costAct);
+    document.getElementById('modal-title').textContent = row.title;
+    document.getElementById('modal-content').innerHTML = row.content;
+    document.getElementById('modal-cost-original').textContent = row.costOrig || '-';
+    document.getElementById('modal-cost-actual').textContent = actualCostText;
+    document.getElementById('modal-cost-saved').textContent = row.costSaved || '-';
+    document.getElementById('modal-reduction-basis').textContent = (row.reductionBasis && row.reductionBasis !== '-') ? row.reductionBasis : '※ 本項目は法定費用または実費のみです。';
+    const badgeContainer = document.getElementById('modal-badges');
+    badgeContainer.innerHTML = (row.items && row.items !== '-') ? `<div class="flex items-start"><span class="bg-slate-200 text-slate-700 text-[10px] font-black px-2 py-1 rounded border border-slate-300 mr-2 w-24 justify-center text-center">📌 必要なモノ</span> <span class="font-bold text-slate-700 text-[13px]">${row.items}</span></div>` : '';
+    const savingContainer = document.getElementById('modal-saving');
+    if (row.saving) {
+      savingContainer.innerHTML = `<div class="bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-sm"><h4 class="text-slate-700 font-extrabold text-[13px] mb-1">📝 備考・アドバイス</h4><p class="text-slate-600 font-medium text-[13px] leading-relaxed">${row.saving}</p></div>`;
+      savingContainer.style.display = 'block';
+    } else { savingContainer.style.display = 'none'; }
+    document.body.classList.add('modal-active');
+  }
+  function closeModal() { document.body.classList.remove('modal-active'); }
+  document.getElementById('modal-overlay').addEventListener('click', closeModal);
+  document.getElementById('modal-close-btn-top').addEventListener('click', closeModal);
+  document.getElementById('modal-close-btn-bottom').addEventListener('click', closeModal);
+</script>
+</body>
+</html>
